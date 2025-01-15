@@ -10,8 +10,17 @@ export class DocumentHandlerStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const deadLetterQueue = new sqs.Queue(this, "DocumentHandlerQueueDLQueue", {
+      deliveryDelay: cdk.Duration.millis(0),
+      retentionPeriod: cdk.Duration.days(14),
+    });
+
     const queue = new sqs.Queue(this, 'DocumentHandlerQueue', {
-      visibilityTimeout: cdk.Duration.seconds(300)
+      visibilityTimeout: cdk.Duration.seconds(300),
+      deadLetterQueue: {
+        maxReceiveCount: 3,
+        queue: deadLetterQueue
+      }
     });
 
     const lambdaFunction = new lambda.Function(this, 'Function', {
